@@ -1,6 +1,9 @@
 #pip install yfinance
 import yfinance as yf
 import pandas as pd
+import datetime as dt
+from datetime import datetime
+
 
 def get_ticker():
     return input()
