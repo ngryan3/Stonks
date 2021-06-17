@@ -1,6 +1,7 @@
 Algo Related To-Do:
 - Add optimization algorithm to the portfolio_view()
-- Convert data from yfinance and crypto api to a desired format
+- Add plot function for the efficient frontier
+- Convert data from alpha_vantage library to a desired format
 
 Front-end To-Do:
 - Add text info to home, about and limitations page
