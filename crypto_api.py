@@ -5,6 +5,7 @@ import json
 import pandas as pd
 import datetime as dt
 from datetime import datetime
+import requests
 #pip install coinbase
 coinbase_client_id= os.environ.get('COINBASE_CLIENT_ID')
 coinbase_secret_id= os.environ.get('COINBASE_SECRET_ID')
@@ -76,4 +77,64 @@ def turn_to_csv(ticker, df):
     df.to_csv(ticker+'.csv')
 
 
+#Alpha Vantage API
 
+alpha_key = os.environ.get('ALPHAVANTAGE_KEY')
+
+def get_ticker_data_av(ticker):
+    url = f"https://www.alphavantage.co/query?function=DIGITAL_CURRENCY_WEEKLY&symbol={ticker}&market=USD&apikey={alpha_key}"
+    r = requests.get(url)
+    data = r.json()
+    df = pd.DataFrame(data)
+    df = df.iloc[7:]
+    df = df.drop(['Meta Data'], axis = 1)
+    df.reset_index()
+    price = ticker+' Closing price'
+    time = ticker+' Date'
+    df_new = pd.DataFrame()
+    prices_list = []
+    time_list = []
+    for i in range(len(df.index)):
+        prices_list.append(df['Time Series (Digital Currency Weekly)'][i]['4b. close (USD)'])
+        time_list.append(df.index[i])
+    df_new = df_new.assign(price = prices_list)
+    df_new = df_new.assign(time = time_list)
+    df_new = df_new.rename(columns = {'price': price, 'time': time})
+    return df_new
+
+
+def get_crypto_inputs():
+    number = input() # max 5
+    number = int(number)
+    ticker_list = []
+    for i in range(1, number+1):
+        ticker_list.append(input())
+        i += 1
+    return ticker_list
+
+
+def get_crypto_data(ticker_list):
+    df_final = pd.DataFrame()
+    for i in range(len(ticker_list)):
+        df = get_ticker_data_av(ticker_list[i])
+        df_final = pd.concat([df_final, df], axis = 1)
+        if i != 0:
+            #print(df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist())
+            if df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist():
+                df_final = df_final.drop(ticker_list[i]+ ' Date', axis = 1)
+    cols = df_final.columns.tolist()
+    index = cols[1]
+    cols.remove(ticker_list[0]+' Date')
+    cols.append(index)
+    df_final = df_final[cols]
+    df_final = df_final.rename(columns={ticker_list[0]+' Date': 'Date'})
+    return df_final
+
+
+def c_turn_to_csv(df):
+    df.to_csv('crypto.csv', index = False)
+
+#test implementation
+test = get_crypto_inputs()
+df = get_crypto_data(test)
+c_turn_to_csv(df)
