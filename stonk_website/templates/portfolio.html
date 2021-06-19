@@ -1,9 +1,11 @@
 {% extends 'base.html' %}
 
+
+
 {% block content %}
 <h1>Portfolio Analysis</h1>
 
-<form method="POST"> {% csrf_token %}
+<form id='form' method="POST"> {% csrf_token %}
     <div class="w3-row-padding w3-padding-64 w3-container">
         <div class="w3-content">
             <div class="w3-twothird">
@@ -17,12 +19,12 @@
     
             <div class="w3-third w3-center">
                 <div class='form-group'>
-                    {{ form.stocks.errors }}
+                    <p class="text-left text-danger font-weight-bold"> {{ form.stocks.errors.as_text }} </p>
                     {{ form.stocks  }}
                 </div>
 
                 <div class='form-group'>
-                    {{ form.crypto_stocks.errors }}
+                    <p class="text-left text-danger font-weight-bold"> {{ form.crypto_stocks.errors.as_text }} </p>
                     {{ form.crypto_stocks  }}
                 </div>
             </div>
@@ -42,11 +44,11 @@
 
             <div class="w3-third w3-center">
                 <div class='form-group'>
-                    {{ form.t.errors }}
+                    <p class="text-left text-danger font-weight-bold"> {{ form.t.errors.as_text }} </p>
                     {{ form.t  }}
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary mb-2" value="stonks">Run Algorithm!</button>
+            <button id="btn" type="submit" class="btn btn-primary btn-lg">Run Algorithm!</button>
         </div>
     </div>
     {% if graph %}
@@ -55,7 +57,9 @@
         </div>
     {% endif %}
 </form>
-
-
+{% if stonks %}
+    <div>{{ stonks }}</div>
+{% endif %}
 
 {% endblock %}
+

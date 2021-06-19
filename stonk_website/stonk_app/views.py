@@ -12,17 +12,22 @@ def home_view(request, *args, **kwargs):
 
 def portfolio_view(request, *args, **kwargs):
     form = StonkForm(request.POST or None)
-    print(request.POST)
-    
-    print(form.is_valid())
+    stocks = None
+    print(form.errors.as_json())
+
+    if request.method == 'POST' and form.is_valid():
+        stocks = form.cleaned_data['stocks']
+        form = StonkForm()
 
     # Perform optimization algo if form is valid
-
     context = {
-        'form': form
+        'form': form,
+        'stonks': stocks
     }
 
-    context['graph'] = demo_plot()
+    
+
+    #context['graph'] = demo_plot()
     
     
     return render(request, 'portfolio.html', context)

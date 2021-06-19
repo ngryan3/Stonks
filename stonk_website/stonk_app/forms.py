@@ -1,4 +1,6 @@
 import yfinance as yf
+from alpha_vantage.cryptocurrencies import CryptoCurrencies
+from alpha_vantage.timeseries import TimeSeries
 
 from django import forms
 
@@ -12,36 +14,58 @@ class StonkForm(forms.Form):
     # 1) At most 20 stocks in total
     # 2) All stocks must have been around for at leasy 2 years
 
-    def clean_num_stocks(self):
-        stocks = self.cleaned_data.get('stocks')
-        crypto_stocks = self.cleaned_data.get('crypto_stocks')
-        
-        stocks_list = [stock.strip() for stock in stocks.split(',')]
-        crypto_stocks_list = [crypto_stocks.strip() for crypto in crypto_stocks.split(',')]
-
-        if len(stocks_list + crypto_stocks_list) > 20:
-            raise forms.ValidationError("Maximum number of stocks exceeded")
-
-
-    # Need an api to check if the selected stocks are crypto and satisfy the previous requirements
     def clean_crypto_stocks(self):
-        pass
+        """
+        Checks if all the crypto stocks satisfy Requirements 
+        """
+        crypto_stocks = self.cleaned_data.get('crypto_stocks')
+        crypto_list = [crypto.strip() for crypto in crypto_stocks.split(',')]
+
+        cc = CryptoCurrencies(key='BNHVRTHJ2BUK74AB', output_format='pandas')
+
+        # Check if there is at most 5 cryto stocks
+        if len(crypto_list) > 5:
+            raise forms.ValidationError("Maximum number of crypto stocks exceeded")
+
+        # Check for uniqueness
+        if len(crypto_list) != len(set(crypto_list)):
+            raise forms.ValidationError("All crypto stocks must be unique")
+
+        # Check if crypto stocks are valid in the alpha_vantage lib
+        for crypto in crypto_list:
+            try:
+                data, meta_data = cc.get_digital_currency_weekly(symbol=crypto, market='USD')
+            except:
+                raise forms.ValidationError("{} is not a valid crypto stock".format(crypto))
+            if len(data) < 104:
+                raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto))
+
+        return crypto_list
     
     
     def clean_stocks(self):
         """
-        Checks if all the stocks satisfy Requirement 2
+        Checks if all the stocks satisfy Requirements 
         """
         stocks = self.cleaned_data.get('stocks')
-
         stocks_list = [stock.strip() for stock in stocks.split(',')]
-        
+
+        ts = TimeSeries('BNHVRTHJ2BUK74AB', output_format='pandas')
+
+        # Check if there is at most 15 stocks
+        if len(stocks_list) > 15:
+            raise forms.ValidationError("Maximum number of stocks exceeded")
+
+        # Check for uniqueness
+        if len(stocks_list) != len(set(stocks_list)):
+            raise forms.ValidationError("All stocks must be unique")
+
+        # Check if stocks are valid in the yfinance lib
         for stock in stocks_list:
             ticker = yf.Ticker(stock)
-            ticker_data = ticker.history(period='2y', interval='1wk')
-            
-            if len(ticker_data) < 114:
+            if ticker.info['logo_url'] == '':
                 raise forms.ValidationError("{} is not a valid stock".format(stock))
+            if len(ticker.history(period='2y', interval='1wk')) < 104:
+                raise forms.ValidationError("{} has not been around for at least 2 years".format(stock))
+
         return stocks_list
-    
-    # Need to check for maximum of 20 stonks selected 
