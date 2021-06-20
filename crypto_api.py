@@ -128,6 +128,7 @@ def get_crypto_data(ticker_list):
     cols.append(index)
     df_final = df_final[cols]
     df_final = df_final.rename(columns={ticker_list[0]+' Date': 'Date'})
+    df_final = df_final.iloc[:104]
     return df_final
 
 
