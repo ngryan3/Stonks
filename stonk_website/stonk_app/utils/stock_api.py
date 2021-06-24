@@ -1,5 +1,4 @@
 #pip install yfinance
-from stonks.crypto_api import turn_to_csv
 import yfinance as yf
 import pandas as pd
 import datetime as dt
@@ -11,8 +10,7 @@ def get_stock_ticker_data(ticker):
     the_ticker = yf.Ticker(ticker)
     hist = the_ticker.history(period="2y", interval='1wk')
     if hist.empty:
-        print("won't work chief")
-        return None
+        return -1
     hist = hist.reset_index()
     #type(hist) #pandas dataframe
     df_Stock = pd.DataFrame()
@@ -30,21 +28,28 @@ def date_string(date):
     #input is a datetime object
     return date.strftime("%Y-%m-%d")
 
+def two_year_restriction(date_list):
+    date = dt.date(int(date_list[0]), int(date_list[1]), int(date_list[2]))
+    if (dt.date.today() - date).days / 365 < 2:
+        return False
+    return True
+
 def get_stock_start_date(df):
     #gets the first monday
     bool = True
     i = 0
     initial = date_string(df['Date'][i]).split('-')
-    if dt.date.today().year - int(initial[0]) < 2 or dt.date.today().month < int(initial[1]):
+
+    if two_year_restriction(initial) is False:
         bool = False
-        print("2 years of data not available for this ticker")
-        return None
+        #print("2 years of data not available for this ticker")
+        return -2
+        
     while bool:
         start_date = date_string(df['Date'][i])
         date_list = start_date.split('-')
         if dt.date(int(date_list[0]), int(date_list[1]), int(date_list[2])).weekday() == 0:
             bool = False
-            print(start_date)
             return start_date
         else:
             i += 1
@@ -59,8 +64,7 @@ def get_stock_weekly_data(df, start_date, ticker):
         next_date = date_split(next_date) + dt.timedelta(days = 7)
         next_date = date_string(next_date)
         test_list.append(next_date)
-
-    test_list.pop(-1)
+    test_list = sorted(set(test_list), key=test_list.index)
     for i in range(len(test_list)):
         df_week = df_week.append(df.loc[df['Date'] == test_list[i]])
     price = ticker+' Closing price'
@@ -69,7 +73,9 @@ def get_stock_weekly_data(df, start_date, ticker):
     for i in range(len(df_week[time])):
        date_list.append(date_string(pd.to_datetime(df_week[time].values[i])))
     df_week = df_week.reset_index(drop = True)
+    df_week.dropna(subset=[ticker+" Closing price"], inplace=True) 
     df_week[time].update(date_list)
+    df_week = df_week.reset_index(drop = True)
     if len(df_week) != 104:
         df_week = df_week.iloc[len(df_week)-104:]
     return df_week
@@ -87,22 +93,21 @@ def get_stock_data(ticker_list):
     if ticker_list == []:
         return 
     df_final = pd.DataFrame()
-    for i in range(len(ticker_list)):
-        try:
-            data = get_stock_ticker_data(ticker_list[i])
-            date1 = get_stock_start_date(data)
-            if data.empty or date1 is None:
-                print("Something went wrong")
-                break
-            else:
-                df = get_stock_weekly_data(data, date1, ticker_list[i])
-        except (KeyError, IndexError) as e:
-            continue
+    for index, ticker in enumerate(ticker_list):
+        data = get_stock_ticker_data(ticker)
+        if type(data) == int:
+            return (-1, ticker)
+        date1 = get_stock_start_date(data)
+        if date1 == -2:
+            return (-2, ticker)
+
+        df = get_stock_weekly_data(data, date1, ticker)
+          
         df_final = pd.concat([df_final, df], axis = 1)
-        if i != 0:
+        if index != 0:
             #print(df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist())
-            if df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist():
-                df_final = df_final.drop(ticker_list[i]+ ' Date', axis = 1)
+            if df_final[ticker +' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist():
+                df_final = df_final.drop(ticker+ ' Date', axis = 1)
     cols = df_final.columns.tolist()
     index = cols[1]
     cols.remove(ticker_list[0]+' Date')
@@ -110,13 +115,8 @@ def get_stock_data(ticker_list):
     df_final = df_final[cols]
     df_final = df_final.rename(columns={ticker_list[0]+' Date': 'Date'})
     df_final = df_final.reset_index(drop = True)
-    return df_final
+    return (0, df_final)
 
 
 def s_turn_to_csv(df):
     df.to_csv('stock.csv', index = False)
-
-# #test implementation
-# test1 = get_stock_inputs()
-# df1 = get_stock_data(test1)
-# s_turn_to_csv(df1)

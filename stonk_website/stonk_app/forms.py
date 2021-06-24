@@ -1,4 +1,7 @@
 import yfinance as yf
+#from .utils.utils import *
+from .utils.crypto_api import *
+from .utils.stock_api import *
 from alpha_vantage.cryptocurrencies import CryptoCurrencies
 from alpha_vantage.timeseries import TimeSeries
 
@@ -32,15 +35,21 @@ class StonkForm(forms.Form):
             raise forms.ValidationError("All crypto stocks must be unique")
 
         # Check if crypto stocks are valid in the alpha_vantage lib
-        for crypto in crypto_list:
-            try:
-                data, meta_data = cc.get_digital_currency_weekly(symbol=crypto, market='USD')
-            except:
-                raise forms.ValidationError("{} is not a valid crypto stock".format(crypto))
-            if len(data) < 104:
-                raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto))
+        crypto_df = get_crypto_data(crypto_list)
+        if crypto_df[0] == -1:
+            raise forms.ValidationError("{} is not a valid crypto stock".format(crypto_df[1]))
+        elif crypto_df[0] == -2:
+            raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto_df[1]))
 
-        return crypto_list
+        # for crypto in crypto_list:
+        #     try:
+        #         data, meta_data = cc.get_digital_currency_weekly(symbol=crypto, market='USD')
+        #     except:
+        #         raise forms.ValidationError("{} is not a valid crypto stock".format(crypto))
+        #     if len(data) < 104:
+        #         raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto))
+
+        return crypto_df[1]
     
     
     def clean_stocks(self):
@@ -61,11 +70,18 @@ class StonkForm(forms.Form):
             raise forms.ValidationError("All stocks must be unique")
 
         # Check if stocks are valid in the yfinance lib
-        for stock in stocks_list:
-            ticker = yf.Ticker(stock)
-            if ticker.info['logo_url'] == '':
-                raise forms.ValidationError("{} is not a valid stock".format(stock))
-            if len(ticker.history(period='2y', interval='1wk')) < 104:
-                raise forms.ValidationError("{} has not been around for at least 2 years".format(stock))
+        stocks_df = get_stock_data(stocks_list)
+        if stocks_df[0] == -1:
+            raise forms.ValidationError("{} is not a valid stock".format(stocks_df[1]))
+        elif stocks_df[0] == -2:
+            raise forms.ValidationError("{} has not been around for at least 2 years".format(stocks_df[1]))
 
-        return stocks_list
+        
+        # for stock in stocks_list:
+        #     ticker = yf.Ticker(stock)
+        #     if ticker.info['logo_url'] == '':
+        #         raise forms.ValidationError("{} is not a valid stock".format(stock))
+        #     if len(ticker.history(period='2y', interval='1wk')) < 104:
+        #         raise forms.ValidationError("{} has not been around for at least 2 years".format(stock))
+
+        return stocks_df[1]

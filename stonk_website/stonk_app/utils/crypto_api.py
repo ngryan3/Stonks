@@ -1,7 +1,6 @@
 import os
 import pandas as pd
 import datetime as dt
-from datetime import datetime
 import requests
 
 #Alpha Vantage API
@@ -15,8 +14,7 @@ def get_ticker_data_avd(ticker):
     try:
         df = pd.DataFrame(data)
     except Exception:
-        print("Invalid crypto ticker")
-        return None
+        return (-1, ticker)
     df = df.iloc[7:]
     df = df.drop(['Meta Data'], axis = 1)
     df.reset_index()
@@ -43,21 +41,28 @@ def date_string(date):
     #input is a datetime object
     return date.strftime("%Y-%m-%d")
 
+def two_year_restriction(date_list):
+    date = dt.date(int(date_list[0]), int(date_list[1]), int(date_list[2]))
+    if (dt.date.today() - date).days / 365 < 2:
+        return False
+    return True
+
 def get_start_date(ticker, df):
     #gets the first monday
     bool = True
     i = 0
     initial = df[ticker+' Date'][len(df)-1].split("-")
-    if dt.datetime.today().year - int(initial[0]) < 2 or dt.datetime.today().month > int(initial[1]):
+    
+    if two_year_restriction(initial) is False:
         bool = False
-        print("2 years of data not available for this ticker")
-        return None
+        #print("2 years of data not available for this ticker")
+        return -2
+
     while bool:
         start_date = df[ticker+' Date'][i]
         date_list = start_date.split('-')
         if dt.date(int(date_list[0]), int(date_list[1]), int(date_list[2])).weekday() == 0:
             bool = False
-            print(start_date)
             return start_date
         else:
             i += 1
@@ -97,19 +102,24 @@ def get_crypto_data(ticker_list):
     if ticker_list == []:
         return 
     df_final = pd.DataFrame()
-    for i in range(len(ticker_list)):
-        df = get_ticker_data_avd(ticker_list[i])
-        sd = get_start_date(ticker_list[i], df)
-        if df.empty or sd is None:
-            print("Something went wrong")
-            break
-        else:
-            df_week = get_weekly_data(df, sd, ticker_list[i])
+    for index, ticker in enumerate(ticker_list):
+        try:
+            df = get_ticker_data_avd(ticker)
+        except Exception as err:
+            print(err)
+        
+        
+        sd = get_start_date(ticker, df)
+        if sd == -2:
+            return (-2, ticker)
+        
+        df_week = get_weekly_data(df, sd, ticker)
         df_final = pd.concat([df_final, df_week], axis = 1)
-        if i != 0:
+        if index != 0:
             #print(df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist())
-            if df_final[ticker_list[i]+' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist():
-                df_final = df_final.drop(ticker_list[i]+ ' Date', axis = 1)
+            if df_final[ticker +' Date'].tolist() == df_final[ticker_list[0]+' Date'].tolist():
+                df_final = df_final.drop(ticker+ ' Date', axis = 1)
+
     cols = df_final.columns.tolist()
     index = cols[1]
     cols.remove(ticker_list[0]+' Date')
@@ -119,7 +129,7 @@ def get_crypto_data(ticker_list):
     df_final = df_final.iloc[:104]
     df_final = df_final.loc[::-1].reset_index(drop = True) #reverses all the rows
     df_final = df_final.reset_index(drop = True)
-    return df_final
+    return (0, df_final)
 
 def c_turn_to_csv(df):
     df.to_csv('crypto.csv', index = False)

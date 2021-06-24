@@ -13,17 +13,22 @@ def home_view(request, *args, **kwargs):
 def portfolio_view(request, *args, **kwargs):
     form = StonkForm(request.POST or None)
     stocks = None
+    crypto = None
     print(form.errors.as_json())
 
     if request.method == 'POST' and form.is_valid():
         stocks = form.cleaned_data['stocks']
+        crypto = form.cleaned_data['crypto_stocks']
         form = StonkForm()
 
     # Perform optimization algo if form is valid
     context = {
         'form': form,
-        'stonks': stocks
+        'stonks': stocks,
+        'crypto': crypto
     }
+
+    print(stocks, crypto)
 
     
 

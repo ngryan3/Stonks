@@ -1,9 +1,30 @@
 # Helper Functions
+import yfinance as yf
+import pandas as pd
 from plotly.offline import plot
 import plotly.graph_objects as go
 
-def get_stock_data(stock):
-    pass
+def get_stocks_data(stocks):
+    df_final = pd.DataFrame()
+    for stock in stocks:
+        ticker = yf.Ticker(stock)
+
+        hist = ticker.history(period='2y', interval='1wk')
+        
+        # Remove rows where the dividends and stock splits are not 0
+        try:
+            hist = hist[(hist['Dividends'] == 0) & (hist['Stock Splits'] == 0)]
+        except:
+            return (-1, stock)
+
+        # Check if stock is at least 2 years old
+        if len(hist) < 104:
+            return (-2, stock)
+
+        df_final['{} Close'.format(stock)] = hist['Close']
+
+    return (0, df_final)
+    
 
 
 def get_crypto_data(crypto):
@@ -56,3 +77,7 @@ def demo_plot():
                     output_type='div')
     
     return plot_div
+
+if __name__ == "__main__":
+    test = ['TD', 'RY']
+    print(get_stocks_data(test))
