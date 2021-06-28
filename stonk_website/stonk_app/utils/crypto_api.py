@@ -85,6 +85,7 @@ def get_weekly_data(df, start_date, ticker):
     time = ticker+' Date'
     df_week = df_week.rename(columns = {'Close': price, 'Date': time})
     df_week = df_week.reset_index(drop = True)
+    df_week = df_week.iloc[:104]
     return df_week
 
 
