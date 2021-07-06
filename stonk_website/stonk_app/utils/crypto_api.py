@@ -29,6 +29,7 @@ def get_ticker_data_avd(ticker):
     df_new = df_new.assign(price = prices_list)
     df_new = df_new.assign(time = time_list)
     df_new = df_new.rename(columns = {'price': price, 'time': time})
+    df_new[price] = df_new[price].astype(float)
     return df_new
 
 def date_split(date):

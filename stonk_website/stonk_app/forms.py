@@ -1,5 +1,5 @@
+from django.forms import widgets
 import yfinance as yf
-#from .utils.utils import *
 from .utils.crypto_api import *
 from .utils.stock_api import *
 from alpha_vantage.cryptocurrencies import CryptoCurrencies
@@ -12,6 +12,7 @@ class StonkForm(forms.Form):
     stocks = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Stocks Here'}))
     crypto_stocks = forms.CharField(max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Crypto Stocks Here'}))
     t = forms.FloatField(widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter t Value Here'}))
+    neg_weight = forms.BooleanField(required=False, initial=True, widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}))
 
     # Requirements:
     # 1) At most 20 stocks in total
@@ -41,15 +42,7 @@ class StonkForm(forms.Form):
         elif crypto_df[0] == -2:
             raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto_df[1]))
 
-        # for crypto in crypto_list:
-        #     try:
-        #         data, meta_data = cc.get_digital_currency_weekly(symbol=crypto, market='USD')
-        #     except:
-        #         raise forms.ValidationError("{} is not a valid crypto stock".format(crypto))
-        #     if len(data) < 104:
-        #         raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto))
-
-        return crypto_df[1]
+        return crypto_df[1], crypto_list
     
     
     def clean_stocks(self):
@@ -76,12 +69,4 @@ class StonkForm(forms.Form):
         elif stocks_df[0] == -2:
             raise forms.ValidationError("{} has not been around for at least 2 years".format(stocks_df[1]))
 
-        
-        # for stock in stocks_list:
-        #     ticker = yf.Ticker(stock)
-        #     if ticker.info['logo_url'] == '':
-        #         raise forms.ValidationError("{} is not a valid stock".format(stock))
-        #     if len(ticker.history(period='2y', interval='1wk')) < 104:
-        #         raise forms.ValidationError("{} has not been around for at least 2 years".format(stock))
-
-        return stocks_df[1]
+        return stocks_df[1], stocks_list
