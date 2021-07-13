@@ -1,8 +1,7 @@
 {% extends 'base.html' %}
 
-
-
 {% block content %}
+
 <h1>Portfolio Analysis</h1>
 
 <form id='form' method="POST"> {% csrf_token %}
@@ -16,62 +15,139 @@
                 <p class="w3-text-grey">- All stocks must have been around for at least 2 years</p>
                 <p class="w3-text-grey">- Can choose a maximum of 20 stocks in total</p>
             </div>
-    
+
             <div class="w3-third w3-center">
                 <div class='form-group'>
                     <p class="text-left text-danger font-weight-bold"> {{ form.stocks.errors.as_text }} </p>
-                    {{ form.stocks  }}
+                    {{ form.stocks }}
                 </div>
 
                 <div class='form-group'>
                     <p class="text-left text-danger font-weight-bold"> {{ form.crypto_stocks.errors.as_text }} </p>
-                    {{ form.crypto_stocks  }}
+                    {{ form.crypto_stocks }}
                 </div>
             </div>
-    
+
         </div>
     </div>
-    
+
     <!-- Second Grid -->
     <div class="w3-row-padding w3-light-grey w3-padding-64 w3-container">
         <div class="w3-content">
             <div class="w3-twothird">
                 <h1>Step 2:</h1>
                 <h5 class="w3-padding-32">Enter Instructions Here!</h5>
-    
+
                 <p class="w3-text-grey">Enter Requirements Here!</p>
             </div>
 
             <div class="w3-third w3-center">
                 <div class='form-group'>
                     <p class="text-left text-danger font-weight-bold"> {{ form.t.errors.as_text }} </p>
-                    {{ form.t  }}
+                    {{ form.t }}
                 </div>
                 <div class='form-group'>
                     {{ form.neg_weight }}
                     <label class="form-check-label">Accept negative weights</label>
                 </div>
+                <button id="btn" type="submit" class="btn btn-primary btn-lg">Run Algorithm!</button>
+                {% if x1_return and x1_std and x2_return and x2_std %}
+                <table>
+                    <tr>
+                        <td>
+                            <p class="font-weight-bold">Stock Returns: <span class="font-weight-normal"> {{ x1_return }}
+                                </span></p>
+                        </td>
+                        <td>
+                            <p class="font-weight-bold">Stock Standard Deviation: <span class="font-weight-normal">
+                                    {{ x1_std }} </span></p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <p class="font-weight-bold">Stock + Crypto Returns: <span class="font-weight-normal">
+                                    {{ x2_return }} </span></p>
+                        </td>
+                        <td>
+                            <p class="font-weight-bold">Stock + Crypto Standard Deviation: <span
+                                    class="font-weight-normal"> {{ x2_std }} </span></p>
+                        </td>
+                    </tr>
+                </table>
+                {% endif %}
             </div>
-            <button id="btn" type="submit" class="btn btn-primary btn-lg">Run Algorithm!</button>
+
         </div>
     </div>
 </form>
 
+<br>
+
 {% if eff_front and port1_table and port2_table %}
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col">
-                <img src="data:image/png;base64, {{ eff_front|safe }}" style="width: 100%;">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title h3">Efficient Frontier</p>
+                </div>
+                <div class="card-body">
+                    <img src="data:image/png;base64, {{ eff_front|safe }}" style="width: 100%;">
+                </div>
             </div>
-            <div class="col">
-                {{ port1_table|safe }}
-            </div>
-            <div class="col">
-                {{ port2_table|safe  }}
+        </div>
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title h3">Historical Data</p>
+                </div>
+                <div class="card-body">
+                    <div>
+                        <ul id='nav' class="nav nav-tabs sales-mini-tabs ml-lg-auto mb-4 mb-md-0" role="tablist">
+                            {% for ticker in ticker_list %}
+                            <li class="nav-item">
+                                <a class="nav-link" id="{{ ticker }}" data-toggle="tab" role="tab"
+                                    aria-selected="true">{{ ticker }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <canvas id="linechart" width="100%"></canvas>
+                </div>
             </div>
         </div>
     </div>
+    
+    <br>
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title h3">Stocks Portfolio</p>
+                </div>
+                <div class="card-body">
+                    {{ port1_table|safe }}
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card">
+                <div class="card-header">
+                    <p class="card-title h3">Stocks + Crypto Portfolio</p>
+                </div>
+                <div class="card-body">
+                    {{ port2_table|safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<br>
 {% endif %}
 
-{% endblock %}
+{% load static %}
 
+{% include 'historical_chart.html' %}
+
+{% endblock %}

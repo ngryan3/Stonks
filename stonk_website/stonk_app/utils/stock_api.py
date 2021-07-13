@@ -12,7 +12,6 @@ def get_stock_ticker_data(ticker):
     if hist.empty:
         return -1
     hist = hist.reset_index()
-    #type(hist) #pandas dataframe
     df_Stock = pd.DataFrame()
     df_Stock = df_Stock.assign(Close = hist['Close'].values)
     df_Stock = df_Stock.assign(Date = hist['Date'].values)
@@ -28,9 +27,8 @@ def date_string(date):
     #input is a datetime object
     return date.strftime("%Y-%m-%d")
 
-def two_year_restriction(date_list):
-    date = dt.date(int(date_list[0]), int(date_list[1]), int(date_list[2]))
-    if (dt.date.today() - date).days / 365 < 2:
+def two_year_restriction(df):
+    if len(df.index) < 104:
         return False
     return True
 
@@ -40,7 +38,7 @@ def get_stock_start_date(df):
     i = 0
     initial = date_string(df['Date'][i]).split('-')
 
-    if two_year_restriction(initial) is False:
+    if two_year_restriction(df) is False:
         bool = False
         #print("2 years of data not available for this ticker")
         return -2
@@ -120,3 +118,14 @@ def get_stock_data(ticker_list):
 
 def s_turn_to_csv(df):
     df.to_csv('stock.csv', index = False)
+
+
+if __name__ == "__main__":
+    msft = yf.Ticker("MSFT")
+
+    # get stock info
+    msft.info
+
+    # get historical market data
+    hist = msft.history(period="max")
+    print(hist)

@@ -36,11 +36,15 @@ class StonkForm(forms.Form):
             raise forms.ValidationError("All crypto stocks must be unique")
 
         # Check if crypto stocks are valid in the alpha_vantage lib
-        crypto_df = get_crypto_data(crypto_list)
-        if crypto_df[0] == -1:
-            raise forms.ValidationError("{} is not a valid crypto stock".format(crypto_df[1]))
-        elif crypto_df[0] == -2:
-            raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto_df[1]))
+        try:
+            crypto_df = get_crypto_data(crypto_list)
+            if crypto_df[0] == -1:
+                raise forms.ValidationError("{} is not a valid crypto stock".format(crypto_df[1]))
+            elif crypto_df[0] == -2:
+                raise forms.ValidationError("{} has not been around for at least 2 years".format(crypto_df[1]))
+        # Happens when the user tries to run the algo again even though 1 minute has not passed
+        except:
+            raise forms.ValidationError("Please wait 1 minute before running the algorithm again")
 
         return crypto_df[1], crypto_list
     
