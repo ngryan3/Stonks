@@ -1,0 +1,56 @@
+<script>
+    var stocksDjango = JSON.parse("{{ stocks|escapejs }}")
+    var cryptoDjango = JSON.parse("{{ crypto|escapejs }}")
+
+    if (Object.keys(stocksDjango).length !== 0) {
+        let linechart = document.getElementById('linechart')
+
+        const ticker_keys = Object.keys(stocksDjango).concat(Object.keys(cryptoDjango))
+
+        const stocks_values = Object.keys(stocksDjango).map(key => stocksDjango[key])
+        const crypto_values = Object.keys(cryptoDjango).map(key => cryptoDjango[key])
+        const values = stocks_values.concat(crypto_values)
+
+        const data = {
+            labels: Object.keys(values[values.length - 1]).map(key => values[values.length - 1][key]),
+            datasets: [
+                {
+                    label: ticker_keys[0],
+                    data: Object.keys(values[0]).map(key => values[0][key]),
+                    borderColor: ["green"],
+                    backgroundColor: ["#3cba9f"],
+                    fill: true,
+                    borderWidth: 2
+
+                }
+            ]
+        }
+        const config = {
+            type: 'line',
+            data: data,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Closing Prices'
+                    }
+                }
+            },
+        };
+
+        let chart = new Chart(linechart, config)
+        var tickers = document.getElementsByClassName('nav-link')
+        for (let i = 4; i < tickers.length; i++) {
+            tickers[i].addEventListener('click', function (e) {
+                var ticker_data = chart.data
+                ticker_data.datasets[0].data = Object.keys(values[i - 4]).map(key => values[i - 4][key])
+                ticker_data.datasets[0].label = ticker_keys[i - 4]
+                chart.update()
+            })
+        }
+    }
+</script>
