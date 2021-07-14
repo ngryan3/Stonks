@@ -11,10 +11,13 @@ def get_ticker_data_avd(ticker):
     url = f"https://www.alphavantage.co/query?function=DIGITAL_CURRENCY_DAILY&symbol={ticker}&market=USD&apikey={alpha_key}"
     r = requests.get(url)
     data = r.json()
-    try:
-        df = pd.DataFrame(data)
-    except Exception:
+
+    if 'Note' in data:
+        return (-3, data)
+    elif 'Error Message' in data:
         return (-1, ticker)
+
+    df = pd.DataFrame(data)
     df = df.iloc[7:]
     df = df.drop(['Meta Data'], axis = 1)
     df.reset_index()
@@ -105,11 +108,9 @@ def get_crypto_data(ticker_list):
         return 
     df_final = pd.DataFrame()
     for index, ticker in enumerate(ticker_list):
-        try:
-            df = get_ticker_data_avd(ticker)
-        except Exception as err:
-            print(err)
-        
+        df = get_ticker_data_avd(ticker)
+        if type(df) is tuple:
+            return df        
         
         sd = get_start_date(ticker, df)
         if sd == -2:
