@@ -39,7 +39,7 @@ def portfolio_view(request, *args, **kwargs):
         ticker_list = stocks_list + crypto_list
 
         # Resets the form
-        form = StonkForm()
+        #form = StonkForm()
 
     # Data needed to be rendered on frontend 
     context = {
@@ -50,10 +50,10 @@ def portfolio_view(request, *args, **kwargs):
         'eff_front': myplot,
         'port1_table': port1_table,
         'port2_table': port2_table,
-        'x1_return': x1_return[0][0] if x1_return else x1_return,
-        'x1_std': x1_std,
-        'x2_return': x2_return[0][0] if x2_return else x2_return,
-        'x2_std': x2_std
+        'x1_return': round(x1_return[0][0], 3) if x1_return else x1_return,
+        'x1_std': round(x1_std, 3) if x1_std else x1_std,
+        'x2_return': round(x2_return[0][0], 3) if x2_return else x2_return,
+        'x2_std': round(x2_std, 3) if x2_std else x2_std
     }    
     
     return render(request, 'portfolio.html', context)

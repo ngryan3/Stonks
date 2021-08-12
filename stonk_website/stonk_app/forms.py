@@ -73,3 +73,13 @@ class StonkForm(forms.Form):
             raise forms.ValidationError("{} has not been around for at least 2 years".format(stocks_df[1]))
 
         return stocks_df[1], stocks_list
+
+    def clean_t(self):
+        """
+        Check if 0 <= t <= 20
+        """
+
+        t = self.cleaned_data.get('t')
+        if t < 0 or t > 20:
+            raise forms.ValidationError("t must be between 0 and 20")
+        return t
