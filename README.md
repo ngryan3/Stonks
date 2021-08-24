@@ -1,4 +1,4 @@
-# Stonks Project
+# Portfolio Optimization with Cryptocurrency (Stonks Project)
 
 ## How to run?
 
