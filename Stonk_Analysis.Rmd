@@ -1,0 +1,107 @@
+---
+title: "Stonk Analysis"
+author: "Patrick Ng"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Goal of the Project
+
+The goal of this project is to examine how crypto can used to diversify investors' portfolios. To do this, we looked at how the optimal portfolio (in terms of returns and risk) for an investor changes when including crypto to investors' portfolios. This optimal portfolio is calculated by solving a quadratic programming (QP) problem. This project allows users to input their own choice of stocks & cryptos and our algorithm will output the optimal portfolio from their choice. 
+
+## Background
+
+Crypto is a relatively new type of financial product that has gained popularity over the past 10 years. It differs from most financial products because there is no underlying asset backing up the value of crypto unlike stocks, options, or bonds. The largest cryptos by market capitalization currently are:
+
+1. Bitcoin (BTC): 611bn
+2. Ethereum (ETH): 227bn 
+3. Tether (USDT): 62bn
+
+Crypto generally tends to be much more volatile than traditional financial products. However, their returns over the past few years have outperformed many stock indices and many individual stocks. This begs the question of the role of crypto to investors looking to maximize their profit but while also limiting their risk. 
+
+## Portfolio Analysis 
+
+### Step 1
+
+Enter the stock and crypto tickers of your desired portfolio (seperated by commas).
+
+Requirements:
+\vspace{-10pt}
+
+- All stocks must have at least 2 years of historical data
+- A total of 20 stocks (max) and 5 cryptos (max)
+
+### Step 2
+
+Enter a user specified parameter $t\in[0,20]$ where $t$ is a weighted preference between maximizing return vs. minimizing risk. A larger value of $t$ means you have a greater preference to maximize your returns. A low value of $t$ means you prefer to minimize the risk of your portfolio. 
+
+## Modelling Our Problem 
+
+To find the optimal portfolio, we modeled our initial problem as quadratic programming (QP). We define
+
+- $t$: a parameter representing the investor preference between maximizing return and minimizing risk 
+- $\boldsymbol{x}$: the vector of weights to invest for each of the $n$ stocks/cryptos 
+- $H$: the covariance matrix of the $n$ stocks/cryptos  (based on weekly returns)
+- $\bar{\boldsymbol{r}}$: the weekly mean return of the $n$ stocks/cryptos
+
+
+The weights for the stocks $\boldsymbol{x}$ should add up to 1. The covariance matrix $H$ is assumed to be positive definite (otherwise there would exist a risk-free portfolio which is not realistic). $t$ is restricted between $[0,20]$. Negative values of $t$ would not make sense for an investor because it would imply the investor wants to minimize return and maximize risk. 
+
+Using these variables, we formulate 2 portfolio optimization (QP) problems to solve for the optimal $\boldsymbol{x}$:
+
+1. Only allow non-negative weights
+2. Allow negative weights (i.e. shorting)
+
+
+### Non-negative Weights
+
+\begin{align*}
+\min \frac{1}{2}\boldsymbol{x}^T H \boldsymbol{x} &- t \bar{\boldsymbol{r}}^T \boldsymbol{x} \;\;\;\text{subject to} \\[5pt]
+\boldsymbol{e}^T \boldsymbol{x} &= 1 \\[5pt]
+\boldsymbol{x} &\geq 0
+\end{align*}
+
+
+Under this portfolio optimization model, we to not allow negative weights (i.e. shorting). This model is more practical since shorting is often unfeasible for most investors. 
+
+One interesting property of only allowing non-negative weights is that the optimal portfolio $\boldsymbol{x}$ will have many weights that are $0$. For example, if I want to find the optimal portfolio using this model for $10$ stocks/cryptos, the optimal portfolio may only select $3$ or $4$ stocks/cryptos to invest in. 
+
+
+
+### Allow Negative Weights
+
+\begin{align*}
+\min \frac{1}{2}\boldsymbol{x}^T H \boldsymbol{x} &- t \bar{\boldsymbol{r}}^T \boldsymbol{x} \;\;\;\text{subject to} \\[5pt]
+\boldsymbol{e}^T \boldsymbol{x} &= 1
+\end{align*}
+
+This portfolio optimization model is similar to the previous model but allows for negative weights (i.e. remove the $\boldsymbol{x} \geq 0$ constraint). This model allows us to short any of the stocks/cryptos and will generally output portfolios with higher returns because of the leverage we obtain by shorting stocks/cryptos. However, as a consequence this model will generally output a portfolio have a higher risk. 
+
+This model allows you to short cryptos but that is not currently possible in the market right now. It will be interesting to see whether or not brokers in the future will allow the shorting of crypto. Nevertheless, shorting any financial instruments is risky and can be difficult for any investor to make money from it. 
+
+
+\newpage
+
+## Algorithm
+
+In both QP models formulated, we use an active set algorithm to solve for the optimal portfolio weights $\boldsymbol{x}$. Active set methods work by generating a sequence of iterates $\boldsymbol{x}_0,\boldsymbol{x}_1,\boldsymbol{x}_2,\boldsymbol{x}_3,...$ where all iterates are feasible portfolios (i.e., satisfy the constraints). Each iteration will get closer to minimizing the objective function and we stop the algorithm once we obtain the optimal portfolio $\boldsymbol{x}$. We know a portfolio is optimal if it satisfies the KKT conditions which are set of conditions that an optimal portfolio must satisfy. 
+
+The algorithm implemented for the non-negative weights was coded by ourselves. The code is shown below.
+
+**Show code Here**
+
+The algorithm implemented allowing for negative weights used the `cvxopt` library in Python that solves general QP problems.
+
+## Model Assumptions and Limitations
+
+The portfolio optimization models utilizes historical values to estimate key input parameters such as the mean return of the stocks $\bar{\boldsymbol{r}}$, and the covariance matrix $H$. Both these parameters are crucial to the calculation of the optmial portfolio $\boldsymbol{x}$. Our optimal portfolio $\boldsymbol{x}$ assumes that these stocks will have returns equal to their historical average. However, using historical data assumes that past data is a good indicator of the future. This assumption is reasonable during 'normal' times but may not hold for long periods of time; stocks can be cyclical, market factors can drive stocks up or down, unexpected world events can disrupt markets. All of which can affect the returns of stocks and their correlation with one another. 
+
+Due to data limitations, we only pull 2 years of weekly data for both stocks and cryptos. Furthermore, many cryptos are relatively new and have not existed for more than one or two years. To obtain sufficient data, we restrict users to choose cryptos with at least two years of historical data. This only gives about 104 points of data to estimate the covariance matrix $H$ and mean return vector $\bar{\boldsymbol{r}}$. Since our historical data does not account for a long time period and thus our input parameters can be inaccurate. 
+
+Another factor our portfolio model does not account for is transaction cost of purchasing/shorting stocks and cryptos. Depending on the significance of trading cost of these securities, it can affect the optimal portfolio drastically. Furthermore, optimization models that can account for transaction costs are harder to solve through algorithms. 
+
+Our portfolio optimization model takes a simplified approach to determining an optimal portfolio for an investor. It is not direct investment advice but can be used as a benchmark when creating a portfolio. 
+
