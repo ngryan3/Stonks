@@ -2,7 +2,7 @@
 
 ## How to run?
 
-Clone the Stonk repository. Make sure all libraries in the requirements.txt file within the stonk_website folder are installed.
+Clone the Stonk repository. Make sure all libraries in the requirements.txt file within the stonk_website folder are installed. This can done through the command `pip install -r ./stonk_website/requirements.txt`
 
 To run the website:
 1. In terminal, change to the stonk_website folder (command is `cd stonk_website`)
